@@ -1,0 +1,848 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Margin Resilience Simulator — FMCG Input Cost Pass-Through Analysis</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+/* ── Reset & base ── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --navy:   #1B2A4A;
+  --teal:   #0E7C7B;
+  --lteal:  #D4EDEC;
+  --amber:  #E8A020;
+  --red:    #C0392B;
+  --green:  #1A7A4A;
+  --lgreen: #D5F5E3;
+  --lyellow:#FEF3DC;
+  --lred:   #FADBD8;
+  --grey0:  #F4F6F9;
+  --grey1:  #E8ECF2;
+  --grey2:  #C8CDD6;
+  --grey3:  #888FA0;
+  --grey4:  #444C5C;
+  --text:   #1A1F2E;
+  --white:  #FFFFFF;
+  --blue:   #185FA5;
+  --radius: 8px;
+  --shadow: 0 1px 4px rgba(0,0,0,.08), 0 0 1px rgba(0,0,0,.06);
+}
+html { font-size: 14px; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Arial, sans-serif;
+  background: var(--grey0);
+  color: var(--text);
+  min-height: 100vh;
+  padding-bottom: 3rem;
+}
+
+/* ── Header ── */
+.header {
+  background: var(--navy);
+  padding: 1.1rem 2rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: .75rem;
+}
+.header-title h1 { font-size: 1.1rem; font-weight: 600; color: var(--white); letter-spacing: .01em; }
+.header-title p  { font-size: .75rem; color: var(--lteal); margin-top: 2px; }
+.header-badges { display: flex; gap: .5rem; flex-wrap: wrap; }
+.badge {
+  font-size: .68rem; font-weight: 600; padding: 3px 9px;
+  border-radius: 20px; letter-spacing: .04em;
+}
+.badge-teal   { background: var(--teal);  color: var(--white); }
+.badge-amber  { background: var(--amber); color: var(--white); }
+.badge-grey   { background: rgba(255,255,255,.15); color: var(--lteal); }
+
+/* ── Nav tabs ── */
+.nav {
+  background: var(--white);
+  border-bottom: 1px solid var(--grey1);
+  padding: 0 2rem;
+  display: flex;
+  gap: 0;
+  overflow-x: auto;
+}
+.nav-tab {
+  padding: .75rem 1.25rem;
+  font-size: .82rem;
+  font-weight: 500;
+  color: var(--grey3);
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  border-bottom: 2px solid transparent;
+  white-space: nowrap;
+  transition: color .15s, border-color .15s;
+}
+.nav-tab:hover { color: var(--navy); }
+.nav-tab.active { color: var(--navy); border-bottom-color: var(--teal); font-weight: 600; }
+
+/* ── Layout ── */
+.container { max-width: 1200px; margin: 0 auto; padding: 1.5rem 2rem; }
+.view { display: none; }
+.view.active { display: block; }
+
+/* ── Cards & sections ── */
+.card {
+  background: var(--white);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  padding: 1.25rem 1.5rem;
+  margin-bottom: 1rem;
+}
+.card-title {
+  font-size: .8rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .06em;
+  color: var(--teal);
+  margin-bottom: 1rem;
+}
+.card-title span { font-weight: 400; text-transform: none; letter-spacing: 0; color: var(--grey3); margin-left: .5rem; }
+
+/* ── Metric row ── */
+.metrics { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: .75rem; margin-bottom: 1rem; }
+.metric-card {
+  background: var(--white);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  padding: 1rem 1.1rem;
+  border-top: 3px solid var(--grey1);
+}
+.metric-card.accent-teal  { border-top-color: var(--teal); }
+.metric-card.accent-amber { border-top-color: var(--amber); }
+.metric-card.accent-red   { border-top-color: var(--red); }
+.metric-card.accent-green { border-top-color: var(--green); }
+.metric-label { font-size: .72rem; color: var(--grey3); margin-bottom: .3rem; font-weight: 500; }
+.metric-value { font-size: 1.7rem; font-weight: 600; color: var(--navy); line-height: 1; }
+.metric-value.warn  { color: var(--amber); }
+.metric-value.danger{ color: var(--red); }
+.metric-value.good  { color: var(--green); }
+.metric-sub { font-size: .71rem; color: var(--grey3); margin-top: .25rem; }
+
+/* ── Controls ── */
+.controls-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1rem; }
+.ctrl { display: flex; flex-direction: column; gap: .4rem; }
+.ctrl-label {
+  display: flex; justify-content: space-between; align-items: center;
+  font-size: .78rem; color: var(--grey4); font-weight: 500;
+}
+.ctrl-val { font-weight: 700; color: var(--navy); font-size: .85rem; }
+input[type=range] {
+  -webkit-appearance: none;
+  width: 100%; height: 4px;
+  background: var(--grey1);
+  border-radius: 2px; outline: none; cursor: pointer;
+}
+input[type=range]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 14px; height: 14px; border-radius: 50%;
+  background: var(--teal); border: 2px solid var(--white);
+  box-shadow: 0 0 0 1px var(--teal);
+}
+input[type=range]::-moz-range-thumb {
+  width: 14px; height: 14px; border-radius: 50%;
+  background: var(--teal); border: 2px solid var(--white);
+  box-shadow: 0 0 0 1px var(--teal);
+}
+
+/* ── Pass-through toggle ── */
+.pt-row { display: flex; gap: .5rem; margin-bottom: 1.25rem; }
+.pt-btn {
+  flex: 1; padding: .5rem .5rem;
+  border: 1.5px solid var(--grey1);
+  border-radius: 6px; background: var(--white);
+  font-size: .76rem; font-weight: 500; color: var(--grey3);
+  cursor: pointer; transition: all .15s; text-align: center;
+}
+.pt-btn:hover { border-color: var(--teal); color: var(--navy); }
+.pt-btn.active {
+  background: var(--lteal); border-color: var(--teal);
+  color: var(--teal); font-weight: 700;
+}
+
+/* ── SKU cards ── */
+.sku-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: .65rem; }
+.sku-card {
+  border-radius: var(--radius);
+  border: 1px solid var(--grey1);
+  padding: .85rem 1rem;
+  background: var(--white);
+  transition: box-shadow .15s;
+}
+.sku-card:hover { box-shadow: var(--shadow); }
+.sku-id { font-size: .68rem; font-weight: 700; color: var(--grey3); margin-bottom: 2px; }
+.sku-name { font-size: .72rem; color: var(--grey4); margin-bottom: .6rem; line-height: 1.3; min-height: 2.2em; }
+.sku-gm { font-size: 1.5rem; font-weight: 700; margin-bottom: 4px; }
+.bar-bg { height: 4px; background: var(--grey1); border-radius: 2px; margin-bottom: .35rem; overflow: hidden; }
+.bar-fill { height: 100%; border-radius: 2px; transition: width .4s ease; }
+.sku-delta { font-size: .7rem; color: var(--grey3); }
+.sku-card.state-ok     { border-color: #A3D9B0; background: var(--lgreen); }
+.sku-card.state-warn   { border-color: #F0C070; background: var(--lyellow); }
+.sku-card.state-bad    { border-color: #E5A0A0; background: var(--lred); }
+.col-ok   { color: var(--green); }
+.col-warn { color: #C05010; }
+.col-bad  { color: var(--red); }
+
+/* ── Sensitivity matrix ── */
+.matrix-controls { display: flex; align-items: center; gap: 1rem; margin-bottom: 1rem; flex-wrap: wrap; }
+.matrix-controls label { font-size: .78rem; color: var(--grey4); font-weight: 500; }
+select {
+  padding: .35rem .65rem;
+  border: 1.5px solid var(--grey1);
+  border-radius: 6px;
+  background: var(--white);
+  color: var(--navy);
+  font-size: .78rem;
+  cursor: pointer;
+  outline: none;
+}
+select:focus { border-color: var(--teal); }
+.matrix-wrap { overflow-x: auto; }
+table.matrix {
+  border-collapse: collapse;
+  font-size: .74rem;
+  width: 100%;
+  white-space: nowrap;
+}
+table.matrix th {
+  padding: .4rem .75rem;
+  background: var(--grey0);
+  color: var(--grey3);
+  font-weight: 600;
+  text-align: center;
+  border: 1px solid var(--grey1);
+  font-size: .7rem;
+  letter-spacing: .03em;
+}
+table.matrix .row-hdr {
+  text-align: left;
+  background: var(--grey0);
+  color: var(--grey4);
+  font-weight: 600;
+  padding-left: .9rem;
+}
+table.matrix td {
+  padding: .38rem .75rem;
+  text-align: center;
+  border: 1px solid var(--grey1);
+  font-weight: 500;
+  transition: background .2s;
+}
+.c-ok   { background: var(--lgreen);  color: #0A5C30; }
+.c-warn { background: var(--lyellow); color: #7A4A00; }
+.c-bad  { background: var(--lred);    color: #8B1A1A; }
+.c-cur  { outline: 2px solid var(--blue); outline-offset: -2px; font-weight: 700; }
+.c-base { background: var(--lteal); color: var(--navy); font-weight: 700; }
+
+/* ── Legend ── */
+.legend { display: flex; gap: 1.25rem; margin-top: .75rem; flex-wrap: wrap; }
+.legend-item { display: flex; align-items: center; gap: .4rem; font-size: .72rem; color: var(--grey3); }
+.legend-dot { width: 10px; height: 10px; border-radius: 2px; flex-shrink: 0; }
+
+/* ── Waterfall ── */
+.wf-grid { display: grid; grid-template-columns: 1fr 1fr; gap: .75rem; margin-top: 1rem; }
+.wf-stat { text-align: center; padding: 1.25rem; background: var(--white); border-radius: var(--radius); box-shadow: var(--shadow); }
+.wf-stat-label { font-size: .75rem; color: var(--grey3); margin-bottom: .4rem; }
+.wf-stat-val { font-size: 2rem; font-weight: 700; color: var(--blue); }
+.wf-stat-sub  { font-size: .72rem; color: var(--grey3); margin-top: .25rem; }
+
+/* ── Chart containers ── */
+.chart-box { position: relative; width: 100%; }
+.chart-box canvas { display: block; }
+
+/* ── Two-col ── */
+.two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+
+/* ── Footer ── */
+.footer {
+  text-align: center;
+  font-size: .7rem;
+  color: var(--grey3);
+  margin-top: 2rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--grey1);
+}
+
+/* ── Responsive ── */
+@media (max-width: 900px) {
+  .sku-grid { grid-template-columns: repeat(3, 1fr); }
+  .controls-grid { grid-template-columns: 1fr; }
+  .two-col { grid-template-columns: 1fr; }
+  .wf-grid { grid-template-columns: 1fr; }
+  .container { padding: 1rem; }
+}
+@media (max-width: 600px) {
+  .sku-grid { grid-template-columns: repeat(2, 1fr); }
+  .header { padding: 1rem; }
+  .nav { padding: 0 .75rem; }
+}
+</style>
+</head>
+<body>
+
+<!-- Header -->
+<div class="header">
+  <div class="header-title">
+    <h1>Margin Resilience Simulator</h1>
+    <p>FMCG input cost pass-through analysis &nbsp;·&nbsp; Bangladesh portfolio &nbsp;·&nbsp; HUL proxy data</p>
+  </div>
+  <div class="header-badges">
+    <span class="badge badge-teal">5 SKUs</span>
+    <span class="badge badge-amber">BDT + Palm Shocks</span>
+    <span class="badge badge-grey">World Bank · Bangladesh Bank · HUL</span>
+  </div>
+</div>
+
+<!-- Nav -->
+<nav class="nav">
+  <button class="nav-tab active" onclick="switchTab('scenario', this)">⚡ Scenario Engine</button>
+  <button class="nav-tab" onclick="switchTab('waterfall', this)">📊 Margin Waterfall</button>
+  <button class="nav-tab" onclick="switchTab('timeseries', this)">📈 Historical Context</button>
+</nav>
+
+<div class="container">
+
+<!-- ══════════════════════════════════════════════════════
+     VIEW 1 — SCENARIO ENGINE
+══════════════════════════════════════════════════════ -->
+<div id="view-scenario" class="view active">
+
+  <!-- Controls -->
+  <div class="card">
+    <div class="card-title">Macro Inputs <span>Adjust sliders — all outputs update instantly</span></div>
+    <div class="controls-grid">
+      <div class="ctrl">
+        <div class="ctrl-label">Palm oil shock vs Dec-2024 base (USD 980/MT) <span class="ctrl-val" id="lbl-palm">+0%</span></div>
+        <input type="range" id="sl-palm" min="-20" max="60" step="5" value="0" oninput="refresh()">
+      </div>
+      <div class="ctrl">
+        <div class="ctrl-label">BDT/USD depreciation vs Dec-2024 base (BDT 121) <span class="ctrl-val" id="lbl-fx">+0%</span></div>
+        <input type="range" id="sl-fx" min="0" max="30" step="5" value="0" oninput="refresh()">
+      </div>
+      <div class="ctrl">
+        <div class="ctrl-label">Target gross margin floor <span class="ctrl-val" id="lbl-floor">30%</span></div>
+        <input type="range" id="sl-floor" min="20" max="45" step="1" value="30" oninput="refresh()">
+      </div>
+    </div>
+    <div style="font-size:.78rem;font-weight:600;color:var(--grey4);margin-bottom:.5rem;">Pass-through strategy</div>
+    <div class="pt-row">
+      <button class="pt-btn active" id="pt-0"   onclick="setPT(0,   this)">Zero pass-through<br><span style="font-weight:400;font-size:.7rem">Full cost absorbed</span></button>
+      <button class="pt-btn"        id="pt-50"  onclick="setPT(0.5, this)">50% pass-through<br><span style="font-weight:400;font-size:.7rem">Half cost to consumer</span></button>
+      <button class="pt-btn"        id="pt-100" onclick="setPT(1,   this)">Full pass-through<br><span style="font-weight:400;font-size:.7rem">Price raised to defend GM</span></button>
+    </div>
+  </div>
+
+  <!-- Metric strip -->
+  <div class="metrics" id="metric-strip"></div>
+
+  <!-- SKU GM outcomes -->
+  <div class="card">
+    <div class="card-title">SKU Gross Margin Outcomes</div>
+    <div class="sku-grid" id="sku-cards"></div>
+    <div class="legend" style="margin-top:.9rem">
+      <div class="legend-item"><div class="legend-dot" style="background:var(--lgreen);border:1px solid #A3D9B0"></div>Above GM floor</div>
+      <div class="legend-item"><div class="legend-dot" style="background:var(--lyellow);border:1px solid #F0C070"></div>Near floor (&lt;5pp buffer)</div>
+      <div class="legend-item"><div class="legend-dot" style="background:var(--lred);border:1px solid #E5A0A0"></div>Below floor</div>
+    </div>
+  </div>
+
+  <!-- Required price increase -->
+  <div class="card">
+    <div class="card-title">Required Retail Price Increase to Defend Base GM <span>(full pass-through reference)</span></div>
+    <div class="sku-grid" id="req-cards"></div>
+  </div>
+
+  <!-- Sensitivity matrix -->
+  <div class="card">
+    <div class="card-title">2-D Sensitivity Matrix <span>GM% — current pass-through strategy · highlighted cell = current slider position</span></div>
+    <div class="matrix-controls">
+      <label>SKU:</label>
+      <select id="matrix-sku" onchange="refresh()">
+        <option value="0">SKU-01 — Premium Face Moisturiser</option>
+        <option value="1">SKU-02 — Anti-Dandruff Shampoo</option>
+        <option value="2">SKU-03 — Bar Soap (Premium)</option>
+        <option value="3">SKU-04 — Liquid Dish Wash</option>
+        <option value="4">SKU-05 — Fabric Wash Powder</option>
+      </select>
+    </div>
+    <div class="matrix-wrap" id="matrix-wrap"></div>
+    <div class="legend">
+      <div class="legend-item"><div class="legend-dot c-ok"   style="border:1px solid #A3D9B0"></div>≥ GM floor</div>
+      <div class="legend-item"><div class="legend-dot c-warn" style="border:1px solid #F0C070"></div>&lt; floor, &gt;20%</div>
+      <div class="legend-item"><div class="legend-dot c-bad"  style="border:1px solid #E5A0A0"></div>&lt;20%</div>
+      <div class="legend-item"><div style="width:10px;height:10px;border-radius:2px;border:2px solid var(--blue);flex-shrink:0"></div>Current selection</div>
+    </div>
+  </div>
+
+</div><!-- /view-scenario -->
+
+
+<!-- ══════════════════════════════════════════════════════
+     VIEW 2 — MARGIN WATERFALL
+══════════════════════════════════════════════════════ -->
+<div id="view-waterfall" class="view">
+
+  <div class="card">
+    <div class="card-title">Margin Waterfall — Profit Erosion by Shock Source</div>
+    <div class="controls-grid" style="margin-bottom:.75rem">
+      <div class="ctrl">
+        <div class="ctrl-label">SKU</div>
+        <select id="wf-sku" onchange="refreshWF()">
+          <option value="0">SKU-01 — Premium Face Moisturiser</option>
+          <option value="1">SKU-02 — Anti-Dandruff Shampoo</option>
+          <option value="2">SKU-03 — Bar Soap (Premium)</option>
+          <option value="3">SKU-04 — Liquid Dish Wash</option>
+          <option value="4">SKU-05 — Fabric Wash Powder</option>
+        </select>
+      </div>
+    </div>
+    <div class="controls-grid">
+      <div class="ctrl">
+        <div class="ctrl-label">Palm oil shock <span class="ctrl-val" id="wf-lbl-palm">+30%</span></div>
+        <input type="range" id="wf-palm" min="-20" max="60" step="5" value="30" oninput="refreshWF()">
+      </div>
+      <div class="ctrl">
+        <div class="ctrl-label">BDT/USD depreciation <span class="ctrl-val" id="wf-lbl-fx">+10%</span></div>
+        <input type="range" id="wf-fx" min="0" max="30" step="5" value="10" oninput="refreshWF()">
+      </div>
+    </div>
+    <div class="chart-box" style="height:280px;margin-top:.75rem">
+      <canvas id="wf-chart"></canvas>
+    </div>
+  </div>
+
+  <div class="wf-grid">
+    <div class="wf-stat">
+      <div class="wf-stat-label">Post-shock GM — zero pass-through</div>
+      <div class="wf-stat-val" id="wf-zero-gm">—</div>
+      <div class="wf-stat-sub" id="wf-zero-sub">vs base</div>
+    </div>
+    <div class="wf-stat">
+      <div class="wf-stat-label">Required price increase — full pass-through</div>
+      <div class="wf-stat-val" id="wf-req-price">—</div>
+      <div class="wf-stat-sub">to restore base gross margin</div>
+    </div>
+  </div>
+
+</div><!-- /view-waterfall -->
+
+
+<!-- ══════════════════════════════════════════════════════
+     VIEW 3 — HISTORICAL CONTEXT
+══════════════════════════════════════════════════════ -->
+<div id="view-timeseries" class="view">
+
+  <div class="card">
+    <div class="card-title">Palm Oil Price (USD/MT) vs BDT/USD Rate — Jan 2019 to Dec 2024</div>
+    <div class="chart-box" style="height:240px">
+      <canvas id="ts-chart"></canvas>
+    </div>
+    <div class="legend" style="margin-top:.75rem">
+      <div class="legend-item"><div class="legend-dot" style="background:#185FA5"></div>Palm oil USD/MT (left axis)</div>
+      <div class="legend-item"><div class="legend-dot" style="background:#0F6E56"></div>BDT/USD rate (right axis)</div>
+    </div>
+  </div>
+
+  <div class="two-col">
+    <div class="card">
+      <div class="card-title">HUL Materials % vs Implied GM — FY2020–FY2024 <span>Structural proxy for Bangladesh FMCG</span></div>
+      <div class="chart-box" style="height:200px">
+        <canvas id="hul-chart"></canvas>
+      </div>
+      <div class="legend" style="margin-top:.75rem">
+        <div class="legend-item"><div class="legend-dot" style="background:rgba(24,95,165,.65)"></div>Materials % of net revenue</div>
+        <div class="legend-item"><div class="legend-dot" style="background:#D85A30"></div>Implied gross margin %</div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-title">Key Events Timeline</div>
+      <div style="font-size:.78rem;line-height:1.85;color:var(--grey4)">
+        <div><strong style="color:var(--navy)">Jan 2019</strong> &nbsp;BDT/USD: 84.35 &nbsp;|&nbsp; Palm: $527/MT</div>
+        <div><strong style="color:var(--navy)">Mar 2020</strong> &nbsp;COVID demand shock — palm dips to $571</div>
+        <div><strong style="color:var(--navy)">Dec 2020</strong> &nbsp;Palm recovery begins — $909/MT</div>
+        <div><strong style="color:var(--navy)">Mar 2022</strong> &nbsp;🔴 Palm peak $1,789/MT — Ukraine/Indonesia export ban</div>
+        <div><strong style="color:var(--navy)">Jun 2022</strong> &nbsp;🔴 BDT begins rapid depreciation — BDT 91.75</div>
+        <div><strong style="color:var(--navy)">Oct 2022</strong> &nbsp;BDT crosses 102 — import cost amplification</div>
+        <div><strong style="color:var(--navy)">Dec 2023</strong> &nbsp;BDT stabilises at 110 — Bangladesh Bank peg</div>
+        <div><strong style="color:var(--navy)">Apr 2024</strong> &nbsp;BDT re-depreciation — jumps to 117</div>
+        <div><strong style="color:var(--navy)">Dec 2024</strong> &nbsp;BDT/USD: 121 &nbsp;|&nbsp; Palm: $980/MT &nbsp;|&nbsp; <strong>Cumulative BDT depreciation: 43.5%</strong></div>
+      </div>
+    </div>
+  </div>
+
+</div><!-- /view-timeseries -->
+
+<div class="footer">
+  Margin Resilience Simulator &nbsp;·&nbsp; Data: World Bank Pink Sheet · Bangladesh Bank · HUL Annual Reports (NSE/BSE) &nbsp;·&nbsp; Built with Chart.js
+</div>
+
+</div><!-- /container -->
+
+<script>
+'use strict';
+
+/* ════════════════════════════════════
+   DATA
+════════════════════════════════════ */
+const SKUS = [
+  { id:'SKU-01', name:'Premium Face Moisturiser', seg:'BPC', baseGM:0.54, palmExp:0.28, importInt:0.72 },
+  { id:'SKU-02', name:'Anti-Dandruff Shampoo',    seg:'BPC', baseGM:0.48, palmExp:0.30, importInt:0.58 },
+  { id:'SKU-03', name:'Bar Soap (Premium)',        seg:'BPC', baseGM:0.40, palmExp:0.42, importInt:0.50 },
+  { id:'SKU-04', name:'Liquid Dish Wash',          seg:'HPC', baseGM:0.38, palmExp:0.35, importInt:0.38 },
+  { id:'SKU-05', name:'Fabric Wash Powder',        seg:'HPC', baseGM:0.34, palmExp:0.22, importInt:0.28 },
+];
+
+const PALM_SHOCKS = [-20, -10, 0, 10, 20, 30, 40, 50];
+const FX_SHOCKS   = [0, 5, 10, 15, 20, 25, 30];
+
+const PALM_DATA = [527,493,496,519,479,478,512,512,533,561,630,729,791,653,571,520,527,603,636,687,740,790,850,909,1005,1100,1034,1100,1077,1000,1064,1102,1089,1274,1311,1327,1394,1594,1789,1760,1669,1394,1024,979,959,940,976,969,966,920,873,849,817,821,843,879,910,875,847,859,857,855,881,910,924,898,877,862,911,951,964,980];
+const FX_DATA   = [84.35,84.40,84.45,84.50,84.55,84.60,84.65,84.70,84.75,84.80,84.88,84.95,84.95,84.93,84.97,84.95,84.95,84.95,84.80,84.80,84.80,84.80,84.80,84.80,84.80,84.80,84.80,84.80,84.80,84.85,84.85,84.85,84.85,85.00,85.20,85.65,85.80,86.20,86.45,86.70,87.50,91.75,94.70,95.02,98.10,102.80,104.50,105.70,106.80,107.00,107.00,107.00,107.00,107.70,108.50,109.50,109.93,110.00,110.00,110.00,110.00,110.00,110.00,117.00,117.50,117.84,117.84,119.00,119.00,119.50,120.20,121.00];
+
+const TS_LABELS = (() => {
+  const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  const out = [];
+  for (const y of [2019,2020,2021,2022,2023,2024])
+    for (const m of months) out.push(m.charAt(0)+' '+String(y).slice(2));
+  return out;
+})();
+
+/* ════════════════════════════════════
+   STATE
+════════════════════════════════════ */
+let ptRate = 0;
+let wfChart = null, tsChart = null, hulChart = null;
+
+/* ════════════════════════════════════
+   CALCULATIONS
+════════════════════════════════════ */
+function calcGM(sku, palm, fx, pt) {
+  const dPalm  = sku.palmExp * (1 + palm/100) * (1 + fx/100) - sku.palmExp;
+  const dOther = Math.max(0, sku.importInt - sku.palmExp) * (fx / 100);
+  return sku.baseGM - (dPalm + dOther) * (1 - pt);
+}
+
+function calcReqPrice(sku, palm, fx) {
+  const dPalm  = sku.palmExp * (1 + palm/100) * (1 + fx/100) - sku.palmExp;
+  const dOther = Math.max(0, sku.importInt - sku.palmExp) * (fx / 100);
+  return (dPalm + dOther) / sku.baseGM;
+}
+
+function gmStateClass(gm, floor) {
+  if (gm < floor - 0.001) return gm < 0.20 ? 'state-bad' : 'state-warn';
+  return 'state-ok';
+}
+function gmColClass(gm, floor) {
+  if (gm < 0.20) return 'col-bad';
+  if (gm < floor - 0.001) return 'col-warn';
+  return 'col-ok';
+}
+function matCellClass(gm, floor, isCur, isBase) {
+  if (isBase) return 'c-base';
+  let c = gm < 0.20 ? 'c-bad' : gm < floor - 0.001 ? 'c-warn' : 'c-ok';
+  if (isCur) c += ' c-cur';
+  return c;
+}
+function barColor(gm, floor) {
+  if (gm < 0.20) return '#C0392B';
+  if (gm < floor - 0.001) return '#C05010';
+  return '#1A7A4A';
+}
+
+/* ════════════════════════════════════
+   TABS
+════════════════════════════════════ */
+function switchTab(name, btn) {
+  document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+  document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
+  document.getElementById('view-' + name).classList.add('active');
+  btn.classList.add('active');
+  if (name === 'timeseries') buildTimeSeriesCharts();
+  if (name === 'waterfall')  refreshWF();
+}
+
+/* ════════════════════════════════════
+   PASS-THROUGH
+════════════════════════════════════ */
+function setPT(v, btn) {
+  ptRate = v;
+  document.querySelectorAll('.pt-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  refresh();
+}
+
+/* ════════════════════════════════════
+   MAIN REFRESH
+════════════════════════════════════ */
+function refresh() {
+  const palm  = parseInt(document.getElementById('sl-palm').value);
+  const fx    = parseInt(document.getElementById('sl-fx').value);
+  const floor = parseInt(document.getElementById('sl-floor').value) / 100;
+
+  document.getElementById('lbl-palm').textContent  = (palm >= 0 ? '+' : '') + palm + '%';
+  document.getElementById('lbl-fx').textContent    = '+' + fx + '%';
+  document.getElementById('lbl-floor').textContent = (floor * 100).toFixed(0) + '%';
+
+  const impliedPalm = (980 * (1 + palm/100)).toFixed(0);
+  const impliedFX   = (121  * (1 + fx/100)).toFixed(1);
+  const atRisk      = SKUS.filter(s => calcGM(s, palm, fx, ptRate) < floor).length;
+
+  /* Metrics */
+  document.getElementById('metric-strip').innerHTML = `
+    <div class="metric-card accent-teal">
+      <div class="metric-label">Palm oil price</div>
+      <div class="metric-value ${palm > 20 ? 'warn' : ''}">${Number(impliedPalm).toLocaleString()}</div>
+      <div class="metric-sub">USD/MT &nbsp;·&nbsp; ${palm >= 0 ? '+' : ''}${palm}% shock</div>
+    </div>
+    <div class="metric-card accent-amber">
+      <div class="metric-label">BDT/USD rate</div>
+      <div class="metric-value ${fx > 15 ? 'warn' : ''}">${impliedFX}</div>
+      <div class="metric-sub">BDT per USD &nbsp;·&nbsp; +${fx}% depreciation</div>
+    </div>
+    <div class="metric-card">
+      <div class="metric-label">GM floor target</div>
+      <div class="metric-value">${(floor * 100).toFixed(0)}%</div>
+      <div class="metric-sub">Management threshold</div>
+    </div>
+    <div class="metric-card ${atRisk > 0 ? 'accent-red' : 'accent-green'}">
+      <div class="metric-label">SKUs below floor</div>
+      <div class="metric-value ${atRisk > 0 ? 'danger' : 'good'}">${atRisk} / 5</div>
+      <div class="metric-sub">${atRisk === 0 ? 'All SKUs above floor' : 'Require pricing action'}</div>
+    </div>
+  `;
+
+  /* SKU GM cards */
+  document.getElementById('sku-cards').innerHTML = SKUS.map(s => {
+    const gm    = calcGM(s, palm, fx, ptRate);
+    const delta = (gm - s.baseGM) * 100;
+    const pct   = (gm * 100).toFixed(1);
+    const sc    = gmStateClass(gm, floor);
+    const cc    = gmColClass(gm, floor);
+    const bw    = Math.max(0, Math.min(100, gm / 0.65 * 100)).toFixed(1);
+    const bc    = barColor(gm, floor);
+    return `<div class="sku-card ${sc}">
+      <div class="sku-id">${s.id}</div>
+      <div class="sku-name">${s.name}</div>
+      <div class="sku-gm ${cc}">${pct}%</div>
+      <div class="bar-bg"><div class="bar-fill" style="width:${bw}%;background:${bc}"></div></div>
+      <div class="sku-delta">Base ${(s.baseGM*100).toFixed(0)}% &nbsp;·&nbsp; Δ ${delta >= 0 ? '+' : ''}${delta.toFixed(1)}pp</div>
+    </div>`;
+  }).join('');
+
+  /* Required price increase cards */
+  document.getElementById('req-cards').innerHTML = SKUS.map(s => {
+    const rp = calcReqPrice(s, palm, fx) * 100;
+    const cc = rp < 5 ? 'col-ok' : rp < 20 ? 'col-warn' : 'col-bad';
+    return `<div class="sku-card">
+      <div class="sku-id">${s.id}</div>
+      <div class="sku-name">${s.name}</div>
+      <div class="sku-gm ${cc}">${rp.toFixed(1)}%</div>
+      <div class="sku-delta">retail price increase needed</div>
+    </div>`;
+  }).join('');
+
+  /* Sensitivity matrix */
+  buildMatrix(palm, fx, floor);
+}
+
+function buildMatrix(curPalm, curFX, floor) {
+  const idx = parseInt(document.getElementById('matrix-sku').value);
+  const sku = SKUS[idx];
+
+  let html = `<table class="matrix"><thead><tr>
+    <th class="row-hdr">Palm ↓ &nbsp;/&nbsp; FX →</th>`;
+  FX_SHOCKS.forEach(fx => { html += `<th>FX +${fx}%</th>`; });
+  html += `</tr></thead><tbody>`;
+
+  PALM_SHOCKS.forEach(palm => {
+    html += `<tr><td class="row-hdr">Palm ${palm >= 0 ? '+' : ''}${palm}%</td>`;
+    FX_SHOCKS.forEach(fx => {
+      const gm     = calcGM(sku, palm, fx, ptRate);
+      const isCur  = (palm === curPalm && fx === curFX);
+      const isBase = (palm === 0 && fx === 0);
+      const cls    = matCellClass(gm, floor, isCur, isBase);
+      html += `<td class="${cls}">${(gm * 100).toFixed(1)}%</td>`;
+    });
+    html += `</tr>`;
+  });
+
+  html += `</tbody></table>`;
+  document.getElementById('matrix-wrap').innerHTML = html;
+}
+
+/* ════════════════════════════════════
+   WATERFALL
+════════════════════════════════════ */
+function refreshWF() {
+  const palm   = parseInt(document.getElementById('wf-palm').value);
+  const fx     = parseInt(document.getElementById('wf-fx').value);
+  const skuIdx = parseInt(document.getElementById('wf-sku').value);
+  const sku    = SKUS[skuIdx];
+
+  document.getElementById('wf-lbl-palm').textContent = (palm >= 0 ? '+' : '') + palm + '%';
+  document.getElementById('wf-lbl-fx').textContent   = '+' + fx + '%';
+
+  const dPalm  = sku.palmExp * (1 + palm/100) * (1 + fx/100) - sku.palmExp;
+  const dOther = Math.max(0, sku.importInt - sku.palmExp) * (fx / 100);
+  const postGM = sku.baseGM - dPalm - dOther;
+  const rp     = calcReqPrice(sku, palm, fx) * 100;
+
+  /* Stat boxes */
+  const zeroGMEl = document.getElementById('wf-zero-gm');
+  const reqPEl   = document.getElementById('wf-req-price');
+  zeroGMEl.textContent = (postGM * 100).toFixed(1) + '%';
+  reqPEl.textContent   = rp.toFixed(1) + '%';
+  zeroGMEl.className   = 'wf-stat-val ' + (postGM < 0.25 ? 'danger' : postGM < 0.35 ? 'warn' : '');
+  reqPEl.className     = 'wf-stat-val ' + (rp > 20 ? 'danger' : rp > 10 ? 'warn' : 'good');
+  document.getElementById('wf-zero-sub').textContent =
+    `vs base ${(sku.baseGM * 100).toFixed(0)}% — Δ ${((postGM - sku.baseGM)*100).toFixed(1)}pp`;
+
+  /* Waterfall data using floating bars */
+  const floatData = [
+    [0, sku.baseGM],
+    [sku.baseGM - dPalm, sku.baseGM],
+    [postGM, sku.baseGM - dPalm],
+    [0, postGM],
+  ];
+  const labels   = ['Base GM', '− Palm oil erosion', '− FX import erosion', 'Post-shock GM'];
+  const bgColors = ['#185FA5', '#C0392B', '#D85A30', postGM < 0.30 ? '#C05010' : '#1A7A4A'];
+  const maxY     = Math.ceil(sku.baseGM * 1.12 * 20) / 20;
+
+  if (wfChart) { wfChart.destroy(); wfChart = null; }
+  const ctx = document.getElementById('wf-chart').getContext('2d');
+  wfChart = new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels,
+      datasets: [{
+        data: floatData,
+        backgroundColor: bgColors,
+        borderRadius: 4,
+        barPercentage: 0.5,
+      }]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      scales: {
+        x: { grid: { display: false }, ticks: { font: { size: 11 }, color: '#888' } },
+        y: {
+          min: 0, max: maxY,
+          ticks: { callback: v => (v * 100).toFixed(0) + '%', font: { size: 11 }, color: '#888' },
+          grid: { color: 'rgba(128,128,128,0.1)' }
+        }
+      },
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          callbacks: {
+            label: ctx => {
+              const d = ctx.raw;
+              const val = Array.isArray(d) ? Math.abs(d[1] - d[0]) : Math.abs(d);
+              return ' ' + (val * 100).toFixed(2) + 'pp';
+            }
+          }
+        }
+      }
+    }
+  });
+}
+
+/* ════════════════════════════════════
+   TIME SERIES CHARTS
+════════════════════════════════════ */
+function buildTimeSeriesCharts() {
+  if (tsChart) return; /* only build once */
+
+  /* Palm oil vs BDT/USD */
+  const ctx1 = document.getElementById('ts-chart').getContext('2d');
+  tsChart = new Chart(ctx1, {
+    type: 'line',
+    data: {
+      labels: TS_LABELS,
+      datasets: [
+        {
+          label: 'Palm oil (USD/MT)',
+          data: PALM_DATA,
+          borderColor: '#185FA5',
+          backgroundColor: 'rgba(24,95,165,0.07)',
+          borderWidth: 1.5, pointRadius: 0, tension: 0.3,
+          fill: true, yAxisID: 'yPalm'
+        },
+        {
+          label: 'BDT/USD',
+          data: FX_DATA,
+          borderColor: '#0F6E56',
+          backgroundColor: 'transparent',
+          borderWidth: 1.5, pointRadius: 0, tension: 0.3,
+          borderDash: [4, 3], fill: false, yAxisID: 'yFX'
+        }
+      ]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      interaction: { mode: 'index', intersect: false },
+      scales: {
+        x: { grid: { display: false }, ticks: { maxTicksLimit: 12, font: { size: 10 }, color: '#888', autoSkip: true } },
+        yPalm: { position: 'left',  min: 400, ticks: { callback: v => '$' + v, font: { size: 10 }, color: '#185FA5' }, grid: { color: 'rgba(128,128,128,0.1)' } },
+        yFX:   { position: 'right', min: 82,  ticks: { callback: v => '৳' + v, font: { size: 10 }, color: '#0F6E56' }, grid: { display: false } }
+      },
+      plugins: { legend: { display: false } }
+    }
+  });
+
+  /* HUL materials % vs implied GM */
+  const ctx2 = document.getElementById('hul-chart').getContext('2d');
+  hulChart = new Chart(ctx2, {
+    type: 'bar',
+    data: {
+      labels: ['FY2020', 'FY2021', 'FY2022', 'FY2023', 'FY2024'],
+      datasets: [
+        {
+          type: 'bar',
+          label: 'Materials %',
+          data: [41.5, 40.3, 43.2, 45.1, 43.2],
+          backgroundColor: 'rgba(24,95,165,0.65)',
+          borderRadius: 3,
+          barPercentage: 0.5,
+          yAxisID: 'y1'
+        },
+        {
+          type: 'line',
+          label: 'Implied GM %',
+          data: [51.3, 52.6, 49.6, 47.6, 49.5],
+          borderColor: '#D85A30',
+          backgroundColor: 'transparent',
+          borderWidth: 2, pointRadius: 4,
+          pointBackgroundColor: '#D85A30',
+          tension: 0.2, yAxisID: 'y1'
+        }
+      ]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      scales: {
+        x: { grid: { display: false }, ticks: { font: { size: 11 }, color: '#888' } },
+        y1: { min: 35, max: 60, ticks: { callback: v => v + '%', font: { size: 11 }, color: '#888' }, grid: { color: 'rgba(128,128,128,0.1)' } }
+      },
+      plugins: {
+        legend: { display: false },
+        tooltip: { callbacks: { label: ctx => ' ' + ctx.raw.toFixed(1) + '%' } }
+      }
+    }
+  });
+}
+
+/* ════════════════════════════════════
+   INIT
+════════════════════════════════════ */
+refresh();
+setTimeout(refreshWF, 50);
+</script>
+</body>
+</html>
