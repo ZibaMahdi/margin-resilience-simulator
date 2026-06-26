@@ -1,7 +1,7 @@
 # Margin Resilience Simulator
 ### FMCG Input Cost Pass-Through Analysis Under BDT Depreciation & Commodity Shocks
 
-[![Live Dashboard](https://img.shields.io/badge/Live%20Dashboard-View%20Interactive%20Tool-185FA5?style=for-the-badge)](https://YOUR-USERNAME.github.io/margin-resilience-simulator/)
+[![Live Dashboard](https://img.shields.io/badge/Live%20Dashboard-View%20Interactive%20Tool-185FA5?style=for-the-badge)](https://ZibaMahdi.github.io/margin-resilience-simulator/)
 [![Python](https://img.shields.io/badge/Python-3.10+-3776AB?style=flat&logo=python&logoColor=white)](python/)
 [![Excel](https://img.shields.io/badge/Excel-Scenario%20Model-217346?style=flat&logo=microsoft-excel&logoColor=white)](excel/)
 
