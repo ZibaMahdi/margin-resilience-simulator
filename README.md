@@ -24,7 +24,9 @@ and which SKUs breach the floor first?*
 
 > **[→ Open the interactive scenario tool](https://ZibaMahdi.github.io/margin-resilience-simulator/)**
 
-![Dashboard Preview](docs/screenshots/dashboard_preview.png)
+<img width="891" height="725" alt="Screenshot 2026-06-26 at 1 41 40 PM" src="https://github.com/user-attachments/assets/a60bad97-55fd-4b92-b700-63bcaa7964b7" />
+<img width="843" height="312" alt="Screenshot 2026-06-26 at 1 42 10 PM" src="https://github.com/user-attachments/assets/faaa0d7c-0f3d-40e5-891f-99f88d772bc2" />
+<img width="896" height="694" alt="Screenshot 2026-06-26 at 1 42 42 PM" src="https://github.com/user-attachments/assets/b36aefc7-3b0b-47f6-aad9-e0ce0e915aa3" />
 
 Three views:
 - **Scenario engine** — live sliders for palm shock, BDT/USD depreciation, 
@@ -66,7 +68,9 @@ petrochemicals/LAB, packaging, fragrance & actives, domestic inputs.
 - **Three sub-tables per SKU:** zero pass-through / 50% pass-through / full pass-through
 - **Companion table:** required retail price increase to defend base gross margin
 
-![Scenario Engine](docs/screenshots/excel_scenario.png)
+<img width="1438" height="469" alt="docs:screenshots:excel_cogs" src="https://github.com/user-attachments/assets/756062cf-7835-4ad0-9422-7cd92dbde6c3" />
+
+
 
 ### Layer 3 — Interactive dashboard
 Slider-driven tool showing GM outcomes and required pricing actions in real time.
@@ -109,14 +113,15 @@ of Palm +30% increases the required price move by 8–12pp vs the FX-only shock
 
 ---
 
-## Management presentation
+## Executive summary
 
-Two-page deck structured for Management Committee delivery.
+<img width="1072" height="601" alt="docs:screenshots:slide1" src="https://github.com/user-attachments/assets/672f16e3-a586-44c5-8e84-5a7f4426d34f" />
+<img width="1079" height="582" alt="docs:screenshots:slide2" src="https://github.com/user-attachments/assets/fe52fea5-9ae4-47c6-a410-24552e0685b1" />
 
-![Slide 1](docs/screenshots/slide1.png)
-![Slide 2](docs/screenshots/slide2.png)
 
-[Download PPTX →](presentation/Margin_Resilience_Simulator_Mgmt_Presentation.pptx)
+
+[Download PPTX →](https://github.com/ZibaMahdi/margin-resilience-simulator/raw/main/presentation/Margin_Resilience_Simulator_Mgmt_Presentation.pptx)
+
 
 ---
 
@@ -125,11 +130,14 @@ Two-page deck structured for Management Committee delivery.
 Three-tab model with colour-coded inputs (blue), formulas (black), 
 and cross-sheet links (green) — standard commercial finance convention.
 
-![COGS Decomposition](docs/screenshots/excel_cogs.png)
-![Scenario Engine](docs/screenshots/excel_scenario.png)
-![Peer Context](docs/screenshots/excel_peer.png)
+<img width="1438" height="469" alt="docs:screenshots:excel_cogs" src="https://github.com/user-attachments/assets/69d449dc-4af1-48fb-aae3-434219a20752" />
+<img width="1008" height="470" alt="docs:screenshots:excel_peer" src="https://github.com/user-attachments/assets/c6f1ed9d-31c5-4e5e-aeb4-aea5fee17f27" />
+<img width="1049" height="618" alt="Screenshot 2026-06-26 at 1 53 09 PM" src="https://github.com/user-attachments/assets/9c183fee-3372-478b-b663-e6197d769b99" />
 
-[Download Excel model →](excel/Margin_Resilience_Simulator.xlsx)
+
+
+[Download Excel model →](https://github.com/ZibaMahdi/margin-resilience-simulator/raw/main/excel/Margin_Resilience_Simulator.xlsx)
+
 
 ---
 
