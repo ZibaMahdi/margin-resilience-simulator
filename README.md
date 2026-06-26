@@ -68,7 +68,6 @@ petrochemicals/LAB, packaging, fragrance & actives, domestic inputs.
 - **Three sub-tables per SKU:** zero pass-through / 50% pass-through / full pass-through
 - **Companion table:** required retail price increase to defend base gross margin
 
-<img width="1438" height="469" alt="docs:screenshots:excel_cogs" src="https://github.com/user-attachments/assets/756062cf-7835-4ad0-9422-7cd92dbde6c3" />
 
 
 
